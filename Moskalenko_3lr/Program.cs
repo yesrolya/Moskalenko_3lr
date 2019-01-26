@@ -20,7 +20,7 @@ namespace Moskalenko_3lr
         bool solved = false;
         bool noSolution = false;
         
-        public Node (Node root) {
+        public Node (string left, string right) {
             //в конструкторе надо сразу решения возможные находить
             //чтобы дальше они рекурсивно создавали следующие ветки
             //также прописать, что не нужно создавать листья при решенном или отсутствии решения
@@ -135,6 +135,20 @@ namespace Moskalenko_3lr
 
         void NextStep ()
         {
+            if (this.IsNot())
+            {
+                var temp = DeleteNot();
+                var t =  temp.Split('=');
+
+                nodes.Add(new Node(t[0], t[1]));
+            }
+            //КАРОЧ ТОП СТРАТА
+            //СНАЧАЛА ПРОВЕРЯЕМ НАШ ЭКЗЕМПЛЯР НА ВОЗМОЖНЫЕ ДЕЙСТВИЯ
+            //ПОТОМ СОЗДАЕМ ЭКЗЕМПЛЯР ОТ ЛЧ И ПЧ, ПОЛУЧЕННЫХ ИЗ ФУНКЦИЙ ЭТИХ ДЕЙСТВИЙ
+            //КОГДА ОН БУДЕТ СОЗДАН РЕКУРСИВНО ЗАПУСКАЮТСЯ ТЕ ЖЕ ФУНКЦИИ НО ДЛЯ ИЗМЕНЕННОГО
+            //ПРИ СОЗДАНИИ, В КОНСТРКТОРЕ, НАДО ЭТИ ФУНКЦИИ ЗАПУСКАТЬ
+            //ПОТОМ И ССЫЛОЧКИ МОЖНО ДОБАВИТЬ В СПИСОК ПОТОМКОВ
+
             //2) диаметральная инверсия
             //по первому знаку 
             //удаление первого знака
@@ -147,6 +161,97 @@ namespace Moskalenko_3lr
 
             //5) остановка
             //если ни одно нельзя решить
+        }
+
+        bool Stop ()
+        {
+            //ничего с этим больше не сделать?
+            SortSides();
+            if (solved == true)
+                return true;
+            else if (leftSide.IndexOf('+') == -1 && leftSide.IndexOf('*') == -1 && leftSide.IndexOf('!') == -1
+                && leftSide.IndexOf('-') == -1)
+                return true;
+            else
+                return false;
+        }
+
+        //поиск отрицаний
+        bool IsNot()
+        {
+            foreach (var s in leftSide.Split(','))
+            {
+                if (s[0] == '!' && ((s[1] == '(' && s[s.Length - 1] == ')') || (s.Length == 2)))
+                    return true;
+            }
+            foreach (var s in rightSide.Split(','))
+            {
+                if (s[0] == '!' && ((s[1] == '(' && s[s.Length - 1] == ')') || (s.Length == 2)))
+                    return true;
+            }
+            
+            return false;
+        }
+
+        string DeleteNot ()
+        {
+            //2) диаметральная инверсия
+            var sl = leftSide.Split(',');
+            var sr = rightSide.Split(',');
+            List<string> left = new List<string>();
+            List<string> right = new List<string>();
+            foreach (var s in sl)
+            {
+                if (s[0] == '!')
+                {
+                    string temp = s;
+                    if (s[1] == '(' && s[s.Length - 1] == ')')
+                    {
+                        temp = s.Substring(2, s.Length - 3);
+                    }
+//КОСТЫЛЬ, МАТЬ
+                    else if (s.Length == 2)
+                    {
+                        temp = s.Substring(1,s.Length - 1);
+                    }
+                    right.Add(temp);
+                }
+                else
+                {
+                    left.Add(s);
+                }
+            }
+
+            foreach (var s in sr)
+            {
+                if (s[0] == '!')
+                {
+                    string temp = s;
+                    if (s[1] == '(' && s[s.Length - 1] == ')')
+                    {
+                        temp = s.Substring(2, s.Length - 3);
+                    }
+                    else if (s.IndexOf('+') == -1 && s.IndexOf('-') == -1 && s.IndexOf('*') == -1)
+                    {
+                        temp = s.Substring(1, s.Length - 1);
+                    }
+                    left.Add(temp);
+                }
+                else
+                {
+                    right.Add(s);
+                }
+            }
+            string tLeft = left[0];
+            string tRight = right[0];
+
+            for (int i = 1; i < left.Count(); i++)
+                tLeft += ',' + left[i];
+
+            for (int i = 1; i < right.Count(); i++)
+                tRight += ',' + right[i];
+
+            return tLeft + "=" + tRight;
         }
 
     }
