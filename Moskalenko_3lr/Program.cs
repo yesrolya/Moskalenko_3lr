@@ -6,88 +6,113 @@ using System.Threading.Tasks;
 
 namespace Moskalenko_3lr
 {
-    class Tree
-    {
-
-    }
-
     class Node
     {
         string leftSide;
         string rightSide;
         List<Node> nodes;
-        Node rootNode;
         bool solved = false;
         bool noSolution = false;
         
         public Node (string left, string right) {
-            //в конструкторе надо сразу решения возможные находить
-            //чтобы дальше они рекурсивно создавали следующие ветки
-            //также прописать, что не нужно создавать листья при решенном или отсутствии решения
+            
+            leftSide = DeleteImplication(left);
+            leftSide = DeleteDoubleNot(leftSide);
+            rightSide = DeleteImplication(right);
+            rightSide = DeleteDoubleNot(rightSide);
+            this.SplitSides(false);
+            this.SplitSides(true);
+            SortSides();
+            CompareSides();
+            nodes = new List<Node>();
+            if (!solved)
+                NextStep();
         }
 
-        void DeleteImplication (string side)
+        string DeleteImplication(string s)
         {
+            string side = s;
             //импликация задается знаком -
             while (side.IndexOf('-') != -1)
             {
                 var pos = side.IndexOf('-');
-                side = side.Substring(0, pos - 1) + '!'
-                    + side.Substring(pos - 1, 1) + '+' + side.Substring(pos + 1, side.Length - pos - 1);
+                var posNot = pos - 2;
+                var len = 0;
+                if (side[pos - 1] == ')')
+                {
+                    for (int i = pos - 1; i >= 0; i--)
+                    {
+                        len++;
+                        if (side[i] == '(')
+                        {
+                            posNot = i;
+                            break;
+                        }
+                    }
+                    side = side.Substring(0, posNot) + '!'
+                        + side.Substring(posNot, len) + '+' + side.Substring(pos + 1, side.Length - posNot - len - 1);
+                }
+                else
+                {
+                    side = side.Substring(0, pos - 1) + '!'
+                        + side.Substring(pos - 1, 1) + '+' + side.Substring(pos + 1, side.Length - pos - 1);
+                }
             }
+            return side;
         }
 
-        void DeleteDoubleNot (string side)
+        string DeleteDoubleNot (string s)
         {
+            string side = s;
             //двойное отрицание задается !!
             while (side.IndexOf("!!") != -1) {
                 var pos = side.IndexOf("!!");
                 side = side.Substring(0, pos) + side.Substring(pos + 2, side.Length - pos - 2);
             }
+            return side;
         }
 
-        void SplitSide (bool left)
+        void SplitSides (bool left)
         {
             //3) редактирование
-            var splitter = '+';
-            if (left)
-                splitter = '*';
+            char splitter = (left ? '*' : '+');
             for (int count = 0; count < 5; count++)
             {
                 string temp = "";
                 //сначала делим строку по знаку
-                string[] ls;
-                if (left)
-                    ls = leftSide.Split(splitter, ',');
-                else
-                    ls = rightSide.Split(splitter, ',');
+                string[] side = new string [(left? 
+                    leftSide.Split(splitter, ',').Length: 
+                    rightSide.Split(splitter, ',').Length)];
+                side = (left ?
+                    leftSide.Split(splitter, ',') :
+                    rightSide.Split(splitter, ','));
 
                 //заменяем знаки запятыми
-                for (int i = 0; i < ls.Length; i++)
+                for (int i = 0; i < side.Length; i++)
                 {
                     int balance = 0;
-                    if (ls[i].IndexOf('(') == -1)
+                    if (side[i].IndexOf('(') == -1)
                     {
                         //соединяем строки без скобок
-                        temp += ls[i] + ',';
+                        temp += side[i] + ',';
                     }
                     else
                     {
                         //для строк со скобками объединяем до достижения баланса
-                        string t = ls[i];
-                        for (int j = 0; j < ls[i].Length; j++)
+                        string t = side[i];
+                        for (int j = 0; j < side[i].Length; j++)
                         {
-                            if (ls[i][j] == '(') balance += 1;
-                            if (ls[i][j] == ')') balance += -1;
+                            if (side[i][j] == '(') balance += 1;
+                            if (side[i][j] == ')') balance += -1;
                         }
                         while (balance != 0)
                         {
                             i++;
-                            t += splitter + ls[i];
-                            for (int j = 0; j < ls[i].Length; j++)
+                            t += splitter + side[i];
+                            for (int j = 0; j < side[i].Length; j++)
                             {
-                                if (ls[i][j] == '(') balance += 1;
-                                if (ls[i][j] == ')') balance += -1;
+                                if (side[i][j] == '(') balance += 1;
+                                if (side[i][j] == ')') balance += -1;
                             }
                         }
 
@@ -102,8 +127,6 @@ namespace Moskalenko_3lr
                 else
                     rightSide = temp.Substring(0, temp.Length - 1);
             }
-
-            SortSides();
         }
         
         void SortSides ()
@@ -120,17 +143,22 @@ namespace Moskalenko_3lr
             var sr = rightSide.Split(',');
             Array.Sort(sr);
             temp = "";
-            foreach (var s in sl)
+            foreach (var s in sr)
             {
                 temp += s + ',';
             }
             rightSide = temp.Substring(0, temp.Length - 1);
-            CompareSides();
         }
 
         void CompareSides()
         {
-            if (rightSide == leftSide) solved = true;
+            if (rightSide == leftSide)
+            {
+                solved = true;
+                Console.WriteLine("YAHOO");
+            }
+                Console.WriteLine(leftSide + '=' + rightSide);
+
         }
 
         void NextStep ()
@@ -138,42 +166,23 @@ namespace Moskalenko_3lr
             if (this.IsNot())
             {
                 var temp = DeleteNot();
-                var t =  temp.Split('=');
-
+                var t = temp.Split('=');
+                //Console.WriteLine(t[0] + '=' + t[1]);
                 nodes.Add(new Node(t[0], t[1]));
             }
-            //КАРОЧ ТОП СТРАТА
-            //СНАЧАЛА ПРОВЕРЯЕМ НАШ ЭКЗЕМПЛЯР НА ВОЗМОЖНЫЕ ДЕЙСТВИЯ
-            //ПОТОМ СОЗДАЕМ ЭКЗЕМПЛЯР ОТ ЛЧ И ПЧ, ПОЛУЧЕННЫХ ИЗ ФУНКЦИЙ ЭТИХ ДЕЙСТВИЙ
-            //КОГДА ОН БУДЕТ СОЗДАН РЕКУРСИВНО ЗАПУСКАЮТСЯ ТЕ ЖЕ ФУНКЦИИ НО ДЛЯ ИЗМЕНЕННОГО
-            //ПРИ СОЗДАНИИ, В КОНСТРКТОРЕ, НАДО ЭТИ ФУНКЦИИ ЗАПУСКАТЬ
-            //ПОТОМ И ССЫЛОЧКИ МОЖНО ДОБАВИТЬ В СПИСОК ПОТОМКОВ
 
-            //2) диаметральная инверсия
-            //по первому знаку 
-            //удаление первого знака
-            //удаление следующей за ! скобки и последней
-            //перенос в противоположную сторону
-            //сортировка
-
-            //4) дихотомическая редукция
-
-
-            //5) остановка
-            //если ни одно нельзя решить
-        }
-
-        bool Stop ()
-        {
-            //ничего с этим больше не сделать?
-            SortSides();
-            if (solved == true)
-                return true;
-            else if (leftSide.IndexOf('+') == -1 && leftSide.IndexOf('*') == -1 && leftSide.IndexOf('!') == -1
-                && leftSide.IndexOf('-') == -1)
-                return true;
-            else
-                return false;
+            List<string> reduct = new List<string>();
+            reduct = Reduction();
+            if (reduct.Count() != 0)
+                foreach (var r in reduct)
+                {
+                    var t = r.Split('=');
+                    if (t[0] != leftSide || t[1] != rightSide)
+                        //Console.WriteLine(t[0] + '=' + t[1]);
+                        nodes.Add(new Node(t[0], t[1]));
+                }
+            if (nodes == null)
+                noSolution = true;
         }
 
         //поиск отрицаний
@@ -191,6 +200,67 @@ namespace Moskalenko_3lr
             }
             
             return false;
+        }
+
+        List<string> Reduction()
+        {
+            string initial = leftSide + '=' + rightSide;
+
+            List<string> solution = new List<string>();
+            int pos1 = 0, pos2;
+            int currentPos = leftSide.IndexOf('+');
+            if (currentPos == -1) currentPos = rightSide.IndexOf('*') + leftSide.Length + 1;
+            //ЯРЧАЙШИЙ ПРИМЕР ГОВНОКОДА 
+            //СМОТРЕТЬ НИЖЕ
+            while (currentPos != -1)
+            {
+                char splitter = (currentPos <= leftSide.Length ? '+' : '*');
+                //находим положение запятых вокруг первого '+'
+                for (int k = currentPos; k > 0; k--)
+                {
+                    if (initial[k] == ',')
+                    {
+                        pos1 = k;
+                        break;
+                    }
+                }
+                pos2 = initial.IndexOf(',', currentPos);
+                if (pos2 == -1) pos2 = initial.Length - 1;
+                int balance = 0;
+                string temp = "";
+
+                foreach (string str in initial.Substring(pos1 + (pos1 == 0? 0: 1), pos2 - pos1 - (pos1 == 0 ? 0 : 1)).Split(splitter))
+                {
+                    if (str.IndexOf('(') != -1 || str.IndexOf(')') != -1 || balance != 0)
+                    {
+                        for (int y = 0; y < str.Length; y++)
+                        {
+                            if (str[y] == '(') balance += 1;
+                            if (str[y] == ')') balance -= 1;
+                        }
+                        temp += str + splitter;
+                    }
+                    else
+                    {
+                        temp = str + ' ';
+                    }
+                    if (balance == 0)
+                    {
+                        solution.Add(
+                        (pos1 != 0? initial.Substring(0, pos1 + 1): "") +
+                        temp.Substring(0, temp.Length-1) +
+                        initial.Substring(pos2, initial.Length - pos2)
+                        );
+                        temp = "";
+                        balance = 0;
+                    }
+                }
+                currentPos = initial.IndexOf('+', pos2);
+                if (currentPos == -1 || currentPos > leftSide.Length) currentPos = initial.IndexOf('*', pos2);
+            }
+
+            
+            return solution;
         }
 
         string DeleteNot ()
@@ -242,6 +312,7 @@ namespace Moskalenko_3lr
                     right.Add(s);
                 }
             }
+            
             string tLeft = left[0];
             string tRight = right[0];
 
@@ -259,69 +330,14 @@ namespace Moskalenko_3lr
     {
         static void Main(string[] args)
         {
-            var leftSide = "f*(q)*(p*(o+!q))*pp*(p-s)";
-            var rightSide = "q+((r))";
-            bool left = true;
-            var splitter = '+';
-            if (left)
-                splitter = '*';
-            for (int count = 0; count < 3; count++)
-            {
-                string temp = "";
-                //сначала делим строку по знаку
-                string[] ls;
-                if (left)
-                    ls = leftSide.Split(splitter, ',');
-                else
-                    ls = rightSide.Split(splitter, ',');
-                for (int i = 0; i < ls.Length; i++)
-                {
-                    int balance = 0;
-                    if (ls[i].IndexOf('(') == -1)
-                    {
-                        //соединяем строки без скобок
-                        temp += ls[i] + ',';
-                    }
-                    else
-                    {
-                        //для строк со скобками объединяем до достижения баланса
-                        string t = ls[i];
-                        for (int j = 0; j < ls[i].Length; j++)
-                        {
-                            if (ls[i][j] == '(') balance += 1;
-                            if (ls[i][j] == ')') balance += -1;
-                        }
-                        while (balance != 0)
-                        {
-                            i++;
-                            t += splitter + ls[i];
-                            for (int j = 0; j < ls[i].Length; j++)
-                            {
-                                if (ls[i][j] == '(') balance += 1;
-                                if (ls[i][j] == ')') balance += -1;
-                            }
-                        }
+            var side = "f*(q)*(p*((o*o)-!q))*pp*(x+((p+o)-s)+i)";
+            string leftSide = "q*(p+!q)*(!p+s)";
+            string rightSide = "s";
 
-                        if (t[0] == '(' && t[t.Length - 1] == ')')
-                            t = t.Substring(1, t.Length - 2);
+            Node n = new Node(leftSide, rightSide);
 
-                        temp += t + ',';
-                    }
-                }
-                if (left)
-                    leftSide = temp.Substring(0, temp.Length - 1);
-                else
-                    rightSide = temp.Substring(0, temp.Length - 1);
-            }
-            var sl = leftSide.Split(',');
-            Array.Sort(sl);
-            string tem = "";
-            foreach (var s in sl)
-            {
-                tem += s + ',';
-            }
-            leftSide = tem.Substring(0, tem.Length - 1);
-            Console.WriteLine(leftSide);
+
+            Console.WriteLine(side);
             Console.ReadKey();
         }
     }
