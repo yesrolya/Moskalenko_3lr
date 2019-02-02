@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace Moskalenko_3lr
 {
+    
     class Node
     {
         string leftSide;
@@ -13,9 +14,10 @@ namespace Moskalenko_3lr
         List<Node> nodes;
         bool solved = false;
         bool noSolution = false;
-        
-        public Node (string left, string right) {
-            
+        string output;
+
+        public Node (string left, string right, string str) {
+            output = str;
             leftSide = DeleteImplication(left);
             leftSide = DeleteDoubleNot(leftSide);
             rightSide = DeleteImplication(right);
@@ -24,9 +26,13 @@ namespace Moskalenko_3lr
             this.SplitSides(true);
             SortSides();
             CompareSides();
-            nodes = new List<Node>();
-            if (!solved)
-                NextStep();
+            if (!Program.solved)
+            {
+                nodes = new List<Node>();
+                if (!Program.solved)
+                    NextStep();
+            }
+            
         }
 
         string DeleteImplication(string s)
@@ -155,20 +161,22 @@ namespace Moskalenko_3lr
             if (rightSide == leftSide)
             {
                 solved = true;
-                Console.WriteLine("YAHOO");
+                Program.solved = true;
+                Console.WriteLine("Решение:");
             }
-                Console.WriteLine(leftSide + '=' + rightSide);
+                Console.WriteLine(output + leftSide + '=' + rightSide);
 
         }
 
         void NextStep ()
         {
+            if (Program.solved) return;
             if (this.IsNot())
             {
                 var temp = DeleteNot();
                 var t = temp.Split('=');
                 //Console.WriteLine(t[0] + '=' + t[1]);
-                nodes.Add(new Node(t[0], t[1]));
+                nodes.Add(new Node(t[0], t[1], output+"    "));
             }
 
             List<string> reduct = new List<string>();
@@ -176,10 +184,14 @@ namespace Moskalenko_3lr
             if (reduct.Count() != 0)
                 foreach (var r in reduct)
                 {
-                    var t = r.Split('=');
-                    if (t[0] != leftSide || t[1] != rightSide)
-                        //Console.WriteLine(t[0] + '=' + t[1]);
-                        nodes.Add(new Node(t[0], t[1]));
+                    if (!Program.solved)
+                    {
+                        var t = r.Split('=');
+                        if (t[0] != leftSide || t[1] != rightSide)
+                            //Console.WriteLine(t[0] + '=' + t[1]);
+                            nodes.Add(new Node(t[0], t[1], output + "    "));
+                    }
+                    
                 }
             if (nodes == null)
                 noSolution = true;
@@ -190,12 +202,14 @@ namespace Moskalenko_3lr
         {
             foreach (var s in leftSide.Split(','))
             {
+                if (s != "")
                 if (s[0] == '!' && ((s[1] == '(' && s[s.Length - 1] == ')') || (s.Length == 2)))
                     return true;
             }
             foreach (var s in rightSide.Split(','))
             {
-                if (s[0] == '!' && ((s[1] == '(' && s[s.Length - 1] == ')') || (s.Length == 2)))
+                if (s != "")
+                    if (s[0] == '!' && ((s[1] == '(' && s[s.Length - 1] == ')') || (s.Length == 2)))
                     return true;
             }
             
@@ -225,6 +239,7 @@ namespace Moskalenko_3lr
                     }
                 }
                 pos2 = initial.IndexOf(',', currentPos);
+                if (pos2 == -1) pos2 = initial.IndexOf('=', currentPos);
                 if (pos2 == -1) pos2 = initial.Length - 1;
                 int balance = 0;
                 string temp = "";
@@ -248,7 +263,7 @@ namespace Moskalenko_3lr
                     {
                         solution.Add(
                         (pos1 != 0? initial.Substring(0, pos1 + 1): "") +
-                        temp.Substring(0, temp.Length-1) +
+                        temp.Substring(0, temp.Length-1) + 
                         initial.Substring(pos2, initial.Length - pos2)
                         );
                         temp = "";
@@ -272,7 +287,7 @@ namespace Moskalenko_3lr
             List<string> right = new List<string>();
             foreach (var s in sl)
             {
-                if (s[0] == '!')
+                if (s[0] == '!' && ((s[1] == '(' && s[s.Length - 1] == ')') || (s.Length == 2)))
                 {
                     string temp = s;
                     if (s[1] == '(' && s[s.Length - 1] == ')')
@@ -294,7 +309,7 @@ namespace Moskalenko_3lr
 
             foreach (var s in sr)
             {
-                if (s[0] == '!')
+                if (s[0] == '!' && ((s[1] == '(' && s[s.Length - 1] == ')') || (s.Length == 2)))
                 {
                     string temp = s;
                     if (s[1] == '(' && s[s.Length - 1] == ')')
@@ -312,9 +327,11 @@ namespace Moskalenko_3lr
                     right.Add(s);
                 }
             }
-            
-            string tLeft = left[0];
-            string tRight = right[0];
+            string tLeft = "";
+            if (left.Count() != 0) tLeft = left[0];
+            string tRight = "";
+            if (right.Count() != 0) tRight = right[0];
+
 
             for (int i = 1; i < left.Count(); i++)
                 tLeft += ',' + left[i];
@@ -328,16 +345,23 @@ namespace Moskalenko_3lr
     }
     class Program
     {
+        public static bool solved = false;
         static void Main(string[] args)
         {
-            var side = "f*(q)*(p*((o*o)-!q))*pp*(x+((p+o)-s)+i)";
-            string leftSide = "q*(p+!q)*(!p+s)";
-            string rightSide = "s";
+            string leftSide;// = "q*(p+!q)*(!p+s)";
+            //string rightSide = "s";
+            //string leftSide = "(m-p)*(s-m)";
+            string rightSide;// = "(s-p)";
+            Console.WriteLine("Метод Ван Хао");
+            Console.WriteLine("Операции: конъюнкция *, импликация -, отрицание !, дизъюнкция +");
+            Console.WriteLine("Введите левую часть:");
+            leftSide = Console.ReadLine();
+            Console.WriteLine("Введите правую часть:");
+            rightSide = Console.ReadLine();
 
-            Node n = new Node(leftSide, rightSide);
+            Node n = new Node(leftSide, rightSide, "");
+            if (!solved) Console.WriteLine("Нет решения.");
 
-
-            Console.WriteLine(side);
             Console.ReadKey();
         }
     }
