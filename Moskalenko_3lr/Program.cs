@@ -224,8 +224,6 @@ namespace Moskalenko_3lr
             int pos1 = 0, pos2;
             int currentPos = leftSide.IndexOf('+');
             if (currentPos == -1) currentPos = rightSide.IndexOf('*') + leftSide.Length + 1;
-            //ЯРЧАЙШИЙ ПРИМЕР ГОВНОКОДА 
-            //СМОТРЕТЬ НИЖЕ
             while (currentPos != -1)
             {
                 char splitter = (currentPos <= leftSide.Length ? '+' : '*');
