@@ -230,19 +230,20 @@ namespace Moskalenko_3lr
                 //находим положение запятых вокруг первого '+'
                 for (int k = currentPos; k > 0; k--)
                 {
-                    if (initial[k] == ',')
+                    if (initial[k] == ',' || initial[k] == '=')
                     {
-                        pos1 = k;
+                        pos1 = k + 1;
                         break;
                     }
                 }
-                pos2 = initial.IndexOf(',', currentPos);
-                if (pos2 == -1) pos2 = initial.IndexOf('=', currentPos);
-                if (pos2 == -1) pos2 = initial.Length - 1;
+
+                pos2 = initial.IndexOf(',', currentPos) - 1;
+                if (pos2 == -2) pos2 = initial.IndexOf('=', currentPos) - 1;
+                if (pos2 == -2) pos2 = initial.Length - 1;
                 int balance = 0;
                 string temp = "";
 
-                foreach (string str in initial.Substring(pos1 + (pos1 == 0? 0: 1), pos2 - pos1 - (pos1 == 0 ? 0 : 1)).Split(splitter))
+                foreach (string str in initial.Substring(pos1, pos2 - pos1 + 1).Split(splitter))
                 {
                     if (str.IndexOf('(') != -1 || str.IndexOf(')') != -1 || balance != 0)
                     {
@@ -260,9 +261,9 @@ namespace Moskalenko_3lr
                     if (balance == 0)
                     {
                         solution.Add(
-                        (pos1 != 0? initial.Substring(0, pos1 + 1): "") +
+                        (initial.Substring(0, pos1)) +
                         temp.Substring(0, temp.Length-1) + 
-                        initial.Substring(pos2, initial.Length - pos2)
+                        initial.Substring(pos2 + 1, initial.Length - pos2 - 1)
                         );
                         temp = "";
                         balance = 0;
