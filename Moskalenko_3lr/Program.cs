@@ -9,14 +9,14 @@ namespace Moskalenko_3lr
     
     class Node
     {
+        Node parent = null;
         string leftSide;
         string rightSide;
         List<Node> nodes;
-        bool solved = false;
-        bool noSolution = false;
         string output;
 
-        public Node (string left, string right, string str) {
+        public Node (string left, string right, string str, Node parent = null) {
+            this.parent = parent;
             output = str;
             leftSide = DeleteImplication(left);
             leftSide = DeleteDoubleNot(leftSide);
@@ -160,11 +160,11 @@ namespace Moskalenko_3lr
         {
             if (rightSide == leftSide)
             {
-                solved = true;
                 Program.solved = true;
-                Console.WriteLine("Решение:");
+                Program.solution = this;
+                //Console.WriteLine("Решение:");
             }
-                Console.WriteLine(output + leftSide + '=' + rightSide);
+                //Console.WriteLine(output + leftSide + '=' + rightSide);
 
         }
 
@@ -176,7 +176,7 @@ namespace Moskalenko_3lr
                 var temp = DeleteNot();
                 var t = temp.Split('=');
                 //Console.WriteLine(t[0] + '=' + t[1]);
-                nodes.Add(new Node(t[0], t[1], output+"    "));
+                nodes.Add(new Node(t[0], t[1], output+"    ", this));
             }
 
             List<string> reduct = new List<string>();
@@ -189,12 +189,10 @@ namespace Moskalenko_3lr
                         var t = r.Split('=');
                         if (t[0] != leftSide || t[1] != rightSide)
                             //Console.WriteLine(t[0] + '=' + t[1]);
-                            nodes.Add(new Node(t[0], t[1], output + "    "));
+                            nodes.Add(new Node(t[0], t[1], output + "    ", this));
                     }
                     
                 }
-            if (nodes == null)
-                noSolution = true;
         }
 
         //поиск отрицаний
@@ -223,7 +221,11 @@ namespace Moskalenko_3lr
             List<string> solution = new List<string>();
             int pos1 = 0, pos2;
             int currentPos = leftSide.IndexOf('+');
-            if (currentPos == -1) currentPos = rightSide.IndexOf('*') + leftSide.Length + 1;
+            if (currentPos == -1)
+            {
+                currentPos = rightSide.IndexOf('*');
+                if (currentPos != -1) currentPos += leftSide.Length + 1;
+            }
             while (currentPos != -1)
             {
                 char splitter = (currentPos <= leftSide.Length ? '+' : '*');
@@ -293,7 +295,6 @@ namespace Moskalenko_3lr
                     {
                         temp = s.Substring(2, s.Length - 3);
                     }
-//КОСТЫЛЬ, МАТЬ
                     else if (s.Length == 2)
                     {
                         temp = s.Substring(1,s.Length - 1);
@@ -341,16 +342,30 @@ namespace Moskalenko_3lr
             return tLeft + "=" + tRight;
         }
 
+        public void PrintSolution()
+        {
+            Node temp = this;
+            Console.WriteLine("Решение:");
+            Console.WriteLine(temp.leftSide + '=' + temp.rightSide);
+            while (temp.parent != null)
+            {
+                temp = temp.parent;
+                Console.WriteLine(temp.leftSide + '=' + temp.rightSide);
+            }
+        }
     }
     class Program
     {
         public static bool solved = false;
+        public static Node solution = null;
         static void Main(string[] args)
         {
-            string leftSide;// = "q*(p+!q)*(!p+s)";
+            string leftSide;
+            string rightSide;
+            //string leftSide = "q*(p+!q)*(!p+s)";
             //string rightSide = "s";
             //string leftSide = "(m-p)*(s-m)";
-            string rightSide;// = "(s-p)";
+            //string rightSide = "(s-p)";
             Console.WriteLine("Метод Ван Хао");
             Console.WriteLine("Операции: конъюнкция *, импликация -, отрицание !, дизъюнкция +");
             Console.WriteLine("Введите левую часть:");
@@ -359,6 +374,7 @@ namespace Moskalenko_3lr
             rightSide = Console.ReadLine();
 
             Node n = new Node(leftSide, rightSide, "");
+            if (solved) solution.PrintSolution();
             if (!solved) Console.WriteLine("Нет решения.");
 
             Console.ReadKey();
