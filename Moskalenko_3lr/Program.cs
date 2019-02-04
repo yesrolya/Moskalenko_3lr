@@ -228,6 +228,8 @@ namespace Moskalenko_3lr
             }
             while (currentPos != -1)
             {
+                pos1 = 0;
+                pos2 = initial.Length - 1;
                 char splitter = (currentPos <= leftSide.Length ? '+' : '*');
                 //находим положение запятых вокруг первого '+'
                 for (int k = currentPos; k > 0; k--)
@@ -239,9 +241,18 @@ namespace Moskalenko_3lr
                     }
                 }
 
-                pos2 = initial.IndexOf(',', currentPos) - 1;
-                if (pos2 == -2) pos2 = initial.IndexOf('=', currentPos) - 1;
-                if (pos2 == -2) pos2 = initial.Length - 1;
+                for (int k = currentPos; k < initial.Length; k++)
+                {
+                    if (initial[k] == ',' || initial[k] == '=')
+                    {
+                        pos2 = k - 1;
+                        break;
+                    }
+                }
+
+                //pos2 = initial.IndexOf(',', currentPos) - 1;
+                //if (pos2 == -2) pos2 = initial.IndexOf('=', currentPos) - 1;
+                //if (pos2 == -2) pos2 = initial.Length - 1;
                 int balance = 0;
                 string temp = "";
 
@@ -362,6 +373,8 @@ namespace Moskalenko_3lr
         {
             string leftSide;
             string rightSide;
+            //string leftSide = "(a*(p+a))";
+            //string rightSide = "(!b*g)+(a*(!g*b))";
             //string leftSide = "q*(p+!q)*(!p+s)";
             //string rightSide = "s";
             //string leftSide = "(m-p)*(s-m)";
